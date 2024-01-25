@@ -3,7 +3,8 @@ from fastapi.encoders import jsonable_encoder as jsonEnc
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from .core.config import settings
+from core.config import settings
+from auth import models
 
 
 def get_application():
@@ -21,6 +22,7 @@ def get_application():
 
 
 app = get_application()
+
 
 @app.get("/")
 async def index() -> JSONResponse:
