@@ -53,3 +53,9 @@ class Admin(Base):
     contractor_roster = relationship("Contractor",
                                      secondary='admin_contractor_association',
                                      back_populates='admins', lazy='dynamic')
+
+
+class Officer(Base):
+    id = Column(Integer, primary_key=True, index=True, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    user = relationship("User", back_populates="additional", uselist=False)
