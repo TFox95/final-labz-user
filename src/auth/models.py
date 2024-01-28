@@ -38,4 +38,10 @@ class Contractor(Base):
     user = relationship("User", back_populates="additional", uselist=False)
 
 
+class Client(Base):
+    id = Column(Integer, primary_key=True, index=True, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    user = relationship("User", back_populates="additional", uselist=False)
+    posted_jobs = relationship("Job", back_populates="clients",
+                               uselist=True, lazy="joined")
 
