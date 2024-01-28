@@ -45,3 +45,11 @@ class Client(Base):
     posted_jobs = relationship("Job", back_populates="clients",
                                uselist=True, lazy="joined")
 
+
+class Admin(Base):
+    id = Column(Integer, primary_key=True, index=True, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    user = relationship("User", back_populates="additional", uselist=False)
+    contractor_roster = relationship("Contractor",
+                                     secondary='admin_contractor_association',
+                                     back_populates='admins', lazy='dynamic')
