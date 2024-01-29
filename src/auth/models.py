@@ -59,3 +59,19 @@ class Officer(Base):
     id = Column(Integer, primary_key=True, index=True, nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"))
     user = relationship("User", back_populates="additional", uselist=False)
+
+
+@event.listens_for(User, "after_insert")
+def create_additional(mapper: Mapper, connection: Session, target: User):
+    if target.role == UserRoles.ADMIN:
+        admin = Admin(user=target)
+        connection.add(admin)
+    elif target.role == UserRoles.OFFICER:
+        officer = Officer(user=target)
+        connection.add(officer)
+    elif target.role == UserRoles.CONTRACTOR:
+        contractor = Contractor(user=target)
+        connection.add(contractor)
+    elif target.role == UserRoles.CLIENT:
+        client = Client(user=target)
+        connection.add(client)
