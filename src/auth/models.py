@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Text, Boolean, Integer
+from sqlalchemy import Column, String, Integer
 from sqlalchemy import ForeignKey, Enum, event
 from sqlalchemy.orm import relationship, Mapper, Session
 from sqlalchemy.types import DateTime
@@ -8,7 +8,7 @@ from enum import Enum as PyEnum
 from core.database import Base
 
 
-class UserRoles(PyEnum):
+class USER_ROLES(PyEnum):
     ADMIN = 0
     OFFICER = 1
     CONTRACTOR = 2
@@ -20,16 +20,20 @@ class User(Base):
     name = Column(String(length=128), index=True)
     email = Column(String(length=128), unique=True, index=True, nullable=False)
     password = Column(String(length=64), nullable=False)
-    date_joined = Column(DateTime(timezone=True),
-                         server_default=func.now(),
-                         nullable=False)
-    bio = Column(Text(length=256), default="")
-    role = Column(Enum(UserRoles), nullable=False, default=UserRoles.CLIENT)
-    additional = relationship("Admin" if role == UserRoles.ADMIN else
-                              "Officer" if role == UserRoles.OFFICER else
-                              "Contractor" if role == UserRoles.CONTRACTOR else
-                              "Client", back_populates="users", uselist=False,
-                              lazy="joined")
+    createdOn = Column(DateTime(timezone=True),
+                       server_default=func.now(),
+                       nullable=False)
+    type = Column(Enum(USER_ROLES), nullable=False,
+                  default=USER_ROLES.CLIENT.value)
+    additional = relationship(
+            (lambda: Admin if User.type == USER_ROLES.ADMIN else
+                (lambda: Officer if User.type == USER_ROLES.OFFICER else
+                    (lambda: Contractor if User.type == USER_ROLES.CONTRACTOR else
+                        Client))),
+            back_populates="user",
+            uselist=False,
+            lazy="joined"
+        )
 
 
 class Contractor(Base):
@@ -63,15 +67,15 @@ class Officer(Base):
 
 @event.listens_for(User, "after_insert")
 def create_additional(mapper: Mapper, connection: Session, target: User):
-    if target.role == UserRoles.ADMIN:
+    if target.type == USER_ROLES.ADMIN:
         admin = Admin(user=target)
         connection.add(admin)
-    elif target.role == UserRoles.OFFICER:
+    elif target.type == USER_ROLES.OFFICER:
         officer = Officer(user=target)
         connection.add(officer)
-    elif target.role == UserRoles.CONTRACTOR:
+    elif target.type == USER_ROLES.CONTRACTOR:
         contractor = Contractor(user=target)
         connection.add(contractor)
-    elif target.role == UserRoles.CLIENT:
+    elif target.type == USER_ROLES.CLIENT:
         client = Client(user=target)
         connection.add(client)
