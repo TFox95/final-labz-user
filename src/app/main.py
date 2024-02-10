@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from core.config import settings
 
+from auth.api import v1 as auth
 
 def get_application():
     _app = FastAPI(title=settings.PROJECT_NAME)
@@ -30,3 +31,5 @@ async def index() -> JSONResponse:
                "status": status.HTTP_200_OK}
     content = jsonEnc(content)
     return JSONResponse(content=content, status_code=status.HTTP_200_OK)
+
+app.include_router(auth.router)
