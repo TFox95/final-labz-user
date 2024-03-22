@@ -1,11 +1,9 @@
 from fastapi import FastAPI, status
-from fastapi.encoders import jsonable_encoder as jsonEnc
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-
-from core.config import settings
-
+from core.config import settings, JsonRender
 from auth.api import v1 as auth
+
 
 def get_application():
     _app = FastAPI(title=settings.PROJECT_NAME)
@@ -18,18 +16,20 @@ def get_application():
         allow_methods=["*"],
         allow_headers=["*"],
     )
-
     return _app
 
 
 app = get_application()
+# ModelBase.metadata.create_all(database.engine)
 
 
-@app.get("/")
+@app.get("/", response_class=JsonRender, status_code=status.HTTP_200_OK)
 async def index() -> JSONResponse:
-    content = {"success": "restful-backend connection reached and established",
-               "status": status.HTTP_200_OK}
-    content = jsonEnc(content)
-    return JSONResponse(content=content, status_code=status.HTTP_200_OK)
+
+    content = {
+        "status": "200",
+        "message": "Connection to database has been established"
+    }
+    return content
 
 app.include_router(auth.router)
