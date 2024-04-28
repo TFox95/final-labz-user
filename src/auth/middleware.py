@@ -1,6 +1,6 @@
 from fastapi import (Request, HTTPException,
                      status, Depends,
-                     Cookie, Response)
+                     Cookie)
 from typing import Optional
 
 from core.database import database
@@ -112,3 +112,15 @@ async def get_current_user(token: Decoded_Token = Depends(check_auth)
                 "message": "Error retrieving User; Please try again later."
             }
         )
+
+
+async def get_current_admin(user: User = Depends(get_current_user)) -> User:
+    if user.type.name.lower() != "admin":
+        content = {
+            "status": "500",
+            "message": "Sorry something went wrong; Try again later"
+        }
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=content)
+    return user
