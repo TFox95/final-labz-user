@@ -1,8 +1,7 @@
-
 from typing import Any, Dict, List, Optional, Union
-
 from pydantic import AnyHttpUrl, PostgresDsn, validator, BaseSettings
 
+from sendgrid import SendGridAPIClient
 from fastapi.responses import JSONResponse
 
 
@@ -26,6 +25,11 @@ class Settings(BaseSettings):
     DATABASE_URI: Optional[PostgresDsn] = None
 
     JWT_SECRET_KEY: str
+
+    SENDGRID_API_KEY: str
+
+    async def SENDGRID_CLIENT(cls) -> SendGridAPIClient:
+        return SendGridAPIClient(cls.SENDGRID_API_KEY)
 
     @validator("DATABASE_URI", pre=True)
     def assemble_db_connection(cls, v: Optional[
