@@ -1,16 +1,17 @@
 from fastapi import APIRouter, HTTPException, status, Depends, Cookie, Request
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
-from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from typing import Optional
 
-from auth.models import User, Jobs
 from core.config import JsonRender
 from core.database import database
-from auth.middleware import get_current_user, check_auth
+
+from auth.models import User
 from auth.crud import TokenHandler, check_password_strength
-from auth.enums import USER_ROLES, CATEGORY_STATES, JOB_STATUS_STATES
+from auth.enums import USER_ROLES
+from auth.middleware import (get_current_user, check_auth,
+                             get_current_admin)
 from auth.schemas import (Register_User, Login_User,
                           Update_User_Parameters)
 
@@ -22,9 +23,8 @@ router = APIRouter(
     dependencies=[]
 )
 
+
 # Post Routes Defined Below
-
-
 @router.post("/register",
              response_class=JsonRender,
              status_code=status.HTTP_200_OK)
@@ -92,27 +92,6 @@ def get_auth():
     return user
 
 
-# @router.get("/test",
-#            response_class=JsonRender,
-#            status_code=status.HTTP_200_OK)
-# async def test(decoded: User = Depends(get_current_user)):
-#
-#    job = Jobs(title="Test", description="testy123",
-#               status=JOB_STATUS_STATES.UNASSIGNED,
-#               category=CATEGORY_STATES.PC_CUSTOM_BUILD,
-#               amount=123456.76, poster=decoded.additional)
-#    job.create(database)
-#    return User.get_by_id(database, decoded.id)
-
-
-@router.get("/protected",
-            response_class=JsonRender,
-            dependencies=[Depends(check_auth)],
-            status_code=status.HTTP_200_OK)
-async def protected_route(decoded=Depends(get_current_user)):
-    return f"{decoded.name} Authorized"
-
-
 @router.get("/token",
             response_class=JsonRender,
             status_code=status.HTTP_200_OK)
@@ -158,38 +137,15 @@ async def get_user(user: User = Depends(get_current_user)
     return content
 
 
-@router.get("/retrieve_users",
+@router.get("/retrieve_user/{targ_user_id}",
             response_class=JsonRender,
             dependencies=[Depends(check_auth)],
             status_code=status.HTTP_200_OK)
-async def get_users(decoded: User = Depends(get_current_user)
-                    ) -> JSONResponse:
-    if decoded.type.name != "ADMIN":
-        content = {
-            "status": "500",
-            "message": "Sorry something went wrong; Try again later"
-        }
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=content)
-
-    content = {
-        "status": "200",
-        "users":  database.get_db().query(User).all()
-    }
-    content = jsonable_encoder(content)
-
-    return content
-
-
-@router.get("/retrieve_user/{targeted_user_id}",
-            response_class=JsonRender,
-            dependencies=[Depends(check_auth)],
-            status_code=status.HTTP_200_OK)
-async def get_specific_user(targeted_user_id: str,
+async def get_specific_user(targ_user_id: str,
                             decoded: User = Depends(get_current_user)
                             ) -> JSONResponse:
-    if not targeted_user_id.isnumeric():
+    content = None
+    if not targ_user_id.isnumeric():
         content = {
             "status": "400",
             "message": "Parameter must be an interger"
@@ -198,25 +154,60 @@ async def get_specific_user(targeted_user_id: str,
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=content)
 
-    targeted_user: User = User.get_by_id(database, int(targeted_user_id))
-    if targeted_user.type.name != "ADMIN" and decoded.type != "ADMIN":
+    targ_user: User = User.get_by_id(database, int(targ_user_id))
+
+    if not targ_user or (
+            decoded.type.name != "ADMIN" and targ_user.type.name == "ADMIN"):
         content = {
             "status": "404",
             "message": "User not Found"
         }
-        HTTPException(
+        raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=content)
 
-    content = None
     if decoded.type.name == "ADMIN":
-        content = jsonable_encoder(targeted_user)
-    if decoded.type.name != "ADMIN":
-        content = jsonable_encoder(targeted_user, exclude=["id", "password"])
+        content = jsonable_encoder(targ_user)
+    elif decoded.type.name != "ADMIN":
+        content = jsonable_encoder(targ_user, exclude=["id", "password"])
         content["additional"].pop("id")
         content["additional"].pop("user_id")
 
     return content
+
+
+@router.get("/retrieve_users",
+            response_class=JsonRender,
+            dependencies=[Depends(get_current_admin)],
+            status_code=status.HTTP_200_OK)
+async def get_users() -> JSONResponse:
+    content = {
+        "status": "200",
+        "users":  database.get_db().query(User).all()
+    }
+
+    content = jsonable_encoder(content)
+    return content
+
+
+@router.get("/retrieve_users/{group}", response_class=JsonRender,
+            dependencies=[Depends(get_current_admin)],
+            status_code=status.HTTP_200_OK)
+async def get_users_by_group(group: int):
+
+    try:
+        content = {
+            "status": "200",
+            "users": database.get_db().query(User).filter_by(type=group).all()
+        }
+        return content
+
+    except Exception as exc:
+        print(str(exc))
+        raise HTTPException(detail={
+            "status": "500",
+            "message": "Sorry something went wrong; Try again later"
+        }, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # Put routes Defined Below
