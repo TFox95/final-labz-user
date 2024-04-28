@@ -1,9 +1,12 @@
 from pydantic import EmailStr
 from datetime import datetime
-from auth.models import (User, Admin_Additional, Client_Additional,
-                         Contractor_Additional, Jobs)
-from core.database import BaseSchema as Base
 from pydantic_sqlalchemy import sqlalchemy_to_pydantic
+
+from auth.models import (User, Admin_Additional, Client_Additional,
+                         Contractor_Additional)
+from work.models import Jobs
+from core.database import BaseSchema as Base
+
 
 # Generate Pydantic schemas
 JobDataSchema = sqlalchemy_to_pydantic(Jobs)
