@@ -1,0 +1,18 @@
+from enum import Enum
+
+
+class CATEGORY_STATES(Enum):
+    PC_CUSTOM_BUILD = 0
+    SOFTWARE_INSTALL = 1
+    SECURITY_HARDWARE_INSTALL = 2
+    SERVER_SETUP = 3
+    OTHER = 4
+
+
+class JOB_STATUS_STATES(Enum):
+    UNASSIGNED = 0
+    ASSIGNED = 1
+    IN_PROGRESS = 2
+    PENDING = 3
+    COMPLETED = 4
+    CANCELLED = 5
