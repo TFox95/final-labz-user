@@ -3,6 +3,8 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from core.config import settings, JsonRender
 from auth.api import v1 as auth
+from work.api import v1 as work
+from emailManager.api import v1 as mail
 
 
 def get_application():
@@ -33,3 +35,5 @@ async def index() -> JSONResponse:
     return content
 
 app.include_router(auth.router)
+app.include_router(work.router)
+app.include_router(mail.router)
