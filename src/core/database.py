@@ -1,7 +1,8 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import as_declarative, declared_attr
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, Session
 from pydantic import BaseModel as Base
+from typing import ContextManager
 
 from core.config import settings
 
@@ -13,7 +14,7 @@ class Database:
         self.SessionLocal = sessionmaker(autocommit=False,
                                          autoflush=False, bind=self.engine)
 
-    def get_db(self):
+    def get_db(self) -> Session:
         db = self.SessionLocal()
         try:
             return db
