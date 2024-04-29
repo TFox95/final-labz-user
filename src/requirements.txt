@@ -27,7 +27,6 @@ mccabe==0.7.0
 platformdirs==4.2.0
 poyo==0.5.0
 prompt-toolkit==3.0.43
-psycopg2==2.9.9
 psycopg2-binary==2.9.9
 pycparser==2.21
 pydantic==1.10.14
